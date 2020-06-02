@@ -25,21 +25,83 @@
 
 package com.outerthoughts.html5doclet.internal.toolkit.util.links;
 
-import com.sun.javadoc.*;
+import java.util.Arrays;
+import java.util.List;
+
 import com.outerthoughts.html5doclet.internal.toolkit.Content;
+import com.sun.javadoc.AnnotationDesc;
+import com.sun.javadoc.ClassDoc;
+import com.sun.javadoc.Doc;
+import com.sun.javadoc.Type;
+import com.sun.javadoc.WildcardType;
 
 /**
  * A factory that constructs links from given link information.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  *
  * @author Jamie Ho
  * @since 1.5
  */
 public abstract class LinkFactory {
+
+    private static final List<String> typeClasses = Arrays.asList(
+        "Applicative",
+        "CartesianLike",
+        "CocartesianLike",
+        "Functor",
+        "Kind1",
+        "Kind2",
+        "Representable",
+        "Traversable"
+    );
+
+    public static final List<String> functionClasses = Arrays.asList(
+        "Supplier",
+        "Function",
+        "BiFunction",
+        "Function3",
+        "Function4",
+        "Function5",
+        "Function6",
+        "Function7",
+        "Function8",
+        "Function9",
+        "Function10",
+        "Function11",
+        "Function12",
+        "Function13",
+        "Function14",
+        "Function15",
+        "Function16"
+    );
+
+    public static final List<String> consumerClasses = Arrays.asList(
+        "Consumer",
+        "BiConsumer"
+    );
+
+    public static final List<String> productClasses = Arrays.asList(
+        "Products.P1",
+        "Products.P2",
+        "Products.P3",
+        "Products.P4",
+        "Products.P5",
+        "Products.P6",
+        "Products.P7",
+        "Products.P8",
+        "Products.P9",
+        "Products.P10",
+        "Products.P11",
+        "Products.P12",
+        "Products.P13",
+        "Products.P14",
+        "Products.P15",
+        "Products.P16"
+    );
 
     /**
      * Return an empty instance of a content object.
@@ -51,7 +113,7 @@ public abstract class LinkFactory {
     /**
      * Constructs a link from the given link information.
      *
-     * @param linkInfo the information about the link.
+     * @param linkInfo   the information about the link.
      * @param muBrackets
      * @return the output of the link.
      */
@@ -84,13 +146,13 @@ public abstract class LinkFactory {
                     setBoundsLinkInfo(linkInfo, superBounds[i]);
                     link.addContent(getLink(linkInfo, muBrackets));
                 }
-            } else if (type.asTypeVariable()!= null) {
+            } else if (type.asTypeVariable() != null) {
                 link.addContent(getTypeAnnotationLinks(linkInfo));
                 linkInfo.isTypeBound = true;
                 //A type variable.
                 Doc owner = type.asTypeVariable().owner();
-                if ((! linkInfo.excludeTypeParameterLinks) &&
-                        owner instanceof ClassDoc) {
+                if ((!linkInfo.excludeTypeParameterLinks) &&
+                    owner instanceof ClassDoc) {
                     linkInfo.classDoc = (ClassDoc) owner;
                     Content label = newContent();
                     label.addContent(type.typeName());
@@ -102,7 +164,7 @@ public abstract class LinkFactory {
                 }
 
                 Type[] bounds = type.asTypeVariable().bounds();
-                if (! linkInfo.excludeTypeBounds) {
+                if (!linkInfo.excludeTypeBounds) {
                     linkInfo.excludeTypeBounds = true;
                     for (int i = 0; i < bounds.length; i++) {
                         link.addContent(i > 0 ? " & " : " extends ");
@@ -113,7 +175,7 @@ public abstract class LinkFactory {
             } else if (type.asClassDoc() != null) {
                 //A class type.
                 if (linkInfo.isTypeBound &&
-                        linkInfo.excludeTypeBoundsLinks) {
+                    linkInfo.excludeTypeBoundsLinks) {
                     //Since we are excluding type parameter links, we should not
                     //be linking to the type bound.
                     link.addContent(type.typeName());
@@ -136,6 +198,60 @@ public abstract class LinkFactory {
                         link.addContent(",");
                         link.addContent(getTypeParameterLink(linkInfo, params[2], muBrackets));
                         link.addContent(">");
+                    } else if (typeClasses.contains(linkInfo.classDoc.name())) {
+                        Type[] params = linkInfo.type.asParameterizedType().typeArguments();
+                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
+                        linkInfo.excludeTypeParameterLinks = true;
+                        link.addContent(getClassLink(linkInfo, muBrackets));
+                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        link.addContent(" ");
+                        link.addContent(getTypeParameterLink(linkInfo, params[0], false));
+                    } else if (functionClasses.contains(linkInfo.classDoc.name())) {
+                        Type[] params = linkInfo.type.asParameterizedType().typeArguments();
+                        link.addContent("(");
+                        for (int i = 0; i < params.length - 1; i++) {
+                            if (i > 0) {
+                                link.addContent(",");
+                            }
+                            link.addContent(getTypeParameterLink(linkInfo, params[i], muBrackets));
+                        }
+                        link.addContent(") ");
+                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
+                        linkInfo.excludeTypeParameterLinks = true;
+                        link.addContent(getClassLink(linkInfo, false));
+                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        link.addContent(" ");
+                        link.addContent(getTypeParameterLink(linkInfo, params[params.length - 1], muBrackets));
+                    } else if (consumerClasses.contains(linkInfo.classDoc.name())) {
+                        Type[] params = linkInfo.type.asParameterizedType().typeArguments();
+                        link.addContent("(");
+                        for (int i = 0; i < params.length; i++) {
+                            if (i > 0) {
+                                link.addContent(",");
+                            }
+                            link.addContent(getTypeParameterLink(linkInfo, params[i], muBrackets));
+                        }
+                        link.addContent(") ");
+                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
+                        linkInfo.excludeTypeParameterLinks = true;
+                        link.addContent(getClassLink(linkInfo, false));
+                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        link.addContent(" void");
+                    } else if (productClasses.contains(linkInfo.classDoc.name())) {
+                        Type[] params = linkInfo.type.asParameterizedType().typeArguments();
+                        link.addContent(getTypeParameterLink(linkInfo, params[0], false));
+                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
+                        linkInfo.excludeTypeParameterLinks = true;
+                        link.addContent(getClassLink(linkInfo, false));
+                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        link.addContent("(");
+                        for (int i = 1; i < params.length; i++) {
+                            if (i > 1) {
+                                link.addContent(",");
+                            }
+                            link.addContent(getTypeParameterLink(linkInfo, params[i], muBrackets));
+                        }
+                        link.addContent(")");
                     } else {
                         link.addContent(getClassLink(linkInfo, muBrackets));
                         if (linkInfo.includeTypeAsSepLink) {
@@ -194,8 +310,7 @@ public abstract class LinkFactory {
     /**
      * Return the link to the given class.
      *
-     * @param linkInfo the information about the link to construct.
-     *
+     * @param linkInfo   the information about the link to construct.
      * @param muBrackets
      * @return the link for the given class.
      */
@@ -203,19 +318,20 @@ public abstract class LinkFactory {
 
     /**
      * Return the link to the given type parameter.
-     * @param linkInfo     the information about the link to construct.
-     * @param typeParam the type parameter to link to.
+     *
+     * @param linkInfo   the information about the link to construct.
+     * @param typeParam  the type parameter to link to.
      * @param muBrackets
      */
     protected abstract Content getTypeParameterLink(LinkInfo linkInfo, Type typeParam, boolean muBrackets);
 
     protected abstract Content getTypeAnnotationLink(LinkInfo linkInfo,
-            AnnotationDesc annotation);
+                                                     AnnotationDesc annotation);
 
     /**
      * Return the links to the type parameters.
      *
-     * @param linkInfo     the information about the link to construct.
+     * @param linkInfo the information about the link to construct.
      * @return the links to the type parameters.
      */
     public Content getTypeParameterLinks(LinkInfo linkInfo) {
@@ -237,17 +353,17 @@ public abstract class LinkFactory {
         if (linkInfo.executableMemberDoc != null) {
             vars = linkInfo.executableMemberDoc.typeParameters();
         } else if (linkInfo.type != null &&
-                linkInfo.type.asParameterizedType() != null){
-            vars =  linkInfo.type.asParameterizedType().typeArguments();
-        } else if (linkInfo.classDoc != null){
+            linkInfo.type.asParameterizedType() != null) {
+            vars = linkInfo.type.asParameterizedType().typeArguments();
+        } else if (linkInfo.classDoc != null) {
             vars = linkInfo.classDoc.typeParameters();
         } else {
             //Nothing to document.
             return links;
         }
         if (((linkInfo.includeTypeInClassLinkLabel && isClassLabel) ||
-             (linkInfo.includeTypeAsSepLink && ! isClassLabel)
-              )
+            (linkInfo.includeTypeAsSepLink && !isClassLabel)
+        )
             && vars.length > 0) {
             links.addContent("<");
             for (int i = 0; i < vars.length; i++) {
@@ -263,8 +379,9 @@ public abstract class LinkFactory {
 
     public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
         Content links = newContent();
-        if (linkInfo.type.asAnnotatedType() == null)
+        if (linkInfo.type.asAnnotatedType() == null) {
             return links;
+        }
         AnnotationDesc[] annotations = linkInfo.type.asAnnotatedType().annotations();
         for (int i = 0; i < annotations.length; i++) {
             if (i > 0) {

@@ -25,17 +25,19 @@
 
 package com.outerthoughts.html5doclet.internal.toolkit.util.links;
 
-import com.sun.javadoc.*;
 import com.outerthoughts.html5doclet.internal.toolkit.Configuration;
 import com.outerthoughts.html5doclet.internal.toolkit.Content;
+import com.sun.javadoc.ClassDoc;
+import com.sun.javadoc.ExecutableMemberDoc;
+import com.sun.javadoc.Type;
 
 /**
  * Encapsulates information about a link.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  *
  * @author Jamie Ho
  * @since 1.5
@@ -150,6 +152,11 @@ public abstract class LinkInfo {
                     name = "(" + name + ")";
                 }
                 label.addContent(name);
+            } else if (!muBrackets && (LinkFactory.functionClasses.contains(classDoc.name()) || LinkFactory.consumerClasses.contains(classDoc.name()))) {
+                // ^ don't show an arrow in the package view
+                label.addContent("->");
+            } else if (!muBrackets && LinkFactory.productClasses.contains(classDoc.name())) {
+                label.addContent("×");
             } else {
                 label.addContent(classDoc.name());
             }
