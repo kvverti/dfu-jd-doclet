@@ -64,7 +64,7 @@ public class LinkFactoryImpl extends LinkFactory {
     /**
      * {@inheritDoc}
      */
-    protected Content getClassLink(LinkInfo linkInfo) {
+    protected Content getClassLink(LinkInfo linkInfo, boolean muBrackets) {
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
         boolean noLabel = linkInfo.label == null || linkInfo.label.isEmpty();
         ClassDoc classDoc = classLinkInfo.classDoc;
@@ -76,7 +76,7 @@ public class LinkFactoryImpl extends LinkFactory {
                     classLinkInfo.type != null &&
                     !classDoc.qualifiedTypeName().equals(classLinkInfo.type.qualifiedTypeName())) :
             "";
-        Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration);
+        Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration, muBrackets);
         Configuration configuration = m_writer.configuration;
         Content link = new ContentBuilder();
         if (classDoc.isIncluded()) {
@@ -119,15 +119,14 @@ public class LinkFactoryImpl extends LinkFactory {
     /**
      * {@inheritDoc}
      */
-    protected Content getTypeParameterLink(LinkInfo linkInfo,
-        Type typeParam) {
+    protected Content getTypeParameterLink(LinkInfo linkInfo, Type typeParam, boolean muBrackets) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
                 ((LinkInfoImpl) linkInfo).getContext(), typeParam);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
         typeLinkInfo.isJava5DeclarationLocation = false;
-        return getLink(typeLinkInfo);
+        return getLink(typeLinkInfo, muBrackets);
     }
 
     protected Content getTypeAnnotationLink(LinkInfo linkInfo,

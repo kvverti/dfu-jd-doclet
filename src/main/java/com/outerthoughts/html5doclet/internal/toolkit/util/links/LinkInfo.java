@@ -136,14 +136,23 @@ public abstract class LinkInfo {
      * Return the label for this class link.
      *
      * @param configuration the current configuration of the doclet.
+     * @param muBrackets
      * @return the label for this class link.
      */
-    public Content getClassLinkLabel(Configuration configuration) {
+    public Content getClassLinkLabel(Configuration configuration, boolean muBrackets) {
         if (label != null && !label.isEmpty()) {
             return label;
         } else if (isLinkable()) {
             Content label = newContent();
-            label.addContent(classDoc.name());
+            if (classDoc.name().endsWith(".Mu")) {
+                String name = classDoc.name().substring(0, classDoc.name().length() - 3);
+                if (muBrackets) {
+                    name = "(" + name + ")";
+                }
+                label.addContent(name);
+            } else {
+                label.addContent(classDoc.name());
+            }
             return label;
         } else {
             Content label = newContent();
