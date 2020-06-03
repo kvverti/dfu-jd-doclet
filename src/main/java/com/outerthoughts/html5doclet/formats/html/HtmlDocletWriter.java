@@ -1070,7 +1070,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getLink(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        return factory.getLink(linkInfo, true);
+        return factory.getLink(linkInfo);
     }
 
     /**
@@ -1081,7 +1081,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getTypeParameterLinks(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        return factory.getTypeParameterLinks(linkInfo, false, true);
+        return factory.getTypeParameterLinks(linkInfo, false);
     }
 
     /*************************************************************

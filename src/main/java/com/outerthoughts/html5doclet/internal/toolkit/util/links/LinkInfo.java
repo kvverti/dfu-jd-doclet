@@ -138,22 +138,20 @@ public abstract class LinkInfo {
      * Return the label for this class link.
      *
      * @param configuration the current configuration of the doclet.
-     * @param muBrackets
+     * @param labelOverride
      * @return the label for this class link.
      */
-    public Content getClassLinkLabel(Configuration configuration, boolean muBrackets) {
+    public Content getClassLinkLabel(Configuration configuration, String labelOverride) {
         if (label != null && !label.isEmpty()) {
             return label;
         } else if (isLinkable()) {
             Content label = newContent();
-            LinkFactory.TypeShape typeShape = LinkFactory.getTypeShape(classDoc.name());
-            if (!muBrackets && typeShape != null) {
-                label.addContent(classDoc.name().substring(0, classDoc.name().lastIndexOf(".")));
-            } else if (!muBrackets && (LinkFactory.functionClasses.contains(classDoc.name()) || LinkFactory.consumerClasses.contains(classDoc.name()))) {
-                // ^ don't show an arrow in the package view
-                label.addContent("->");
-            } else if (!muBrackets && LinkFactory.productClasses.contains(classDoc.name())) {
-                label.addContent("×");
+            if (!labelOverride.equals("Type")) {
+                if (labelOverride.equals("Mu")) {
+                    label.addContent(classDoc.name().substring(0, classDoc.name().lastIndexOf(".")));
+                } else {
+                    label.addContent(labelOverride);
+                }
             } else {
                 label.addContent(classDoc.name());
             }

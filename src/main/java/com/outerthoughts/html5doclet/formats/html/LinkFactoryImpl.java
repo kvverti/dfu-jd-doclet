@@ -29,8 +29,6 @@ import java.util.List;
 
 import com.sun.javadoc.*;
 import com.outerthoughts.html5doclet.formats.html.markup.ContentBuilder;
-import com.outerthoughts.html5doclet.formats.html.markup.RawHtml;
-import com.outerthoughts.html5doclet.formats.html.markup.StringContent;
 import com.outerthoughts.html5doclet.internal.toolkit.*;
 import com.outerthoughts.html5doclet.internal.toolkit.util.*;
 import com.outerthoughts.html5doclet.internal.toolkit.util.links.*;
@@ -64,7 +62,7 @@ public class LinkFactoryImpl extends LinkFactory {
     /**
      * {@inheritDoc}
      */
-    protected Content getClassLink(LinkInfo linkInfo, boolean muBrackets) {
+    protected Content getClassLink(LinkInfo linkInfo, String labelOverride) {
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
         boolean noLabel = linkInfo.label == null || linkInfo.label.isEmpty();
         ClassDoc classDoc = classLinkInfo.classDoc;
@@ -76,7 +74,7 @@ public class LinkFactoryImpl extends LinkFactory {
                     classLinkInfo.type != null &&
                     !classDoc.qualifiedTypeName().equals(classLinkInfo.type.qualifiedTypeName())) :
             "";
-        Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration, muBrackets);
+        Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration, labelOverride);
         Configuration configuration = m_writer.configuration;
         Content link = new ContentBuilder();
         if (classDoc.isIncluded()) {
@@ -119,14 +117,25 @@ public class LinkFactoryImpl extends LinkFactory {
     /**
      * {@inheritDoc}
      */
-    protected Content getTypeParameterLink(LinkInfo linkInfo, Type typeParam, boolean muBrackets) {
+    protected Content getTypeParameterLink(LinkInfo linkInfo, Type typeParam) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
                 ((LinkInfoImpl) linkInfo).getContext(), typeParam);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
         typeLinkInfo.isJava5DeclarationLocation = false;
-        return getLink(typeLinkInfo, muBrackets);
+        return getLink(typeLinkInfo);
+    }
+
+    @Override
+    protected LinkInfo makeLink(LinkInfo linkInfo, Type type) {
+        LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
+            ((LinkInfoImpl) linkInfo).getContext(), type);
+        typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
+        typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
+        typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
+        typeLinkInfo.isJava5DeclarationLocation = false;
+        return typeLinkInfo;
     }
 
     protected Content getTypeAnnotationLink(LinkInfo linkInfo,
