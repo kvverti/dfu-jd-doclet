@@ -48,6 +48,11 @@ import com.sun.javadoc.WildcardType;
  */
 public abstract class LinkFactory {
 
+    private static final List<String> appClasses = Arrays.asList(
+        "App",
+        "App2"
+    );
+
     private static final List<String> typeClasses = Arrays.asList(
         "Applicative",
         "CartesianLike",
@@ -102,6 +107,87 @@ public abstract class LinkFactory {
         "Products.P15",
         "Products.P16"
     );
+
+    public static class TypeShape {
+        final String typeName;
+        final boolean typeClassRendering;
+        // nonnegative for type param index in the mu list, negative for blank
+        final int[] typeArgs;
+
+        TypeShape(String typeName, boolean typeClassRendering, int... typeArgs) {
+            this.typeName = typeName;
+            this.typeClassRendering = typeClassRendering;
+            this.typeArgs = typeArgs;
+        }
+    }
+
+    public static final List<TypeShape> muTypeClasses = Arrays.asList(
+        new TypeShape("Adapter.Mu", false, -1, -1, 0, 1),
+        new TypeShape("Affine.Mu", false, -1, -1, 0, 1),
+        new TypeShape("AffineP.Mu", true, -1),
+        new TypeShape("Applicative.Mu", true, -1),
+        new TypeShape("Cartesian.Mu", true, -1),
+        new TypeShape("CartesianLike.Mu", true, -1),
+        new TypeShape("Closed.Mu", false, -1),
+        new TypeShape("Cocartesian.Mu", true, -1),
+        new TypeShape("CocartesianLike.Mu", true, -1),
+        new TypeShape("Const.Instance.Mu", false),
+        new TypeShape("Const.Mu", false, 0, -1),
+        new TypeShape("DataResult.Instance.Mu", false),
+        new TypeShape("DataResult.Mu", false, -1),
+        new TypeShape("Either.Instance.Mu", false),
+        new TypeShape("Either.Mu", false, -1, 0),
+        new TypeShape("Forget.Instance.Mu", false),
+        new TypeShape("Forget.Mu", false, 0, -1, -1),
+        new TypeShape("ForgetOpt.Instance.Mu", false),
+        new TypeShape("ForgetOpt.Mu", false, 0, -1, -1),
+        new TypeShape("FunctionType.Instance.Mu", false),
+        new TypeShape("FunctionType.Mu", false, -1, -1),
+        new TypeShape("FunctionType.ReaderInstance.Mu", false),
+        new TypeShape("FunctionType.ReaderMu", false, 0, -1),
+        new TypeShape("Functor.Mu", true, -1),
+        new TypeShape("FunctorProfunctor.Mu", false, 0, -1),
+        new TypeShape("GetterP.Mu", false, -1),
+        new TypeShape("IdF.Instance.Mu", false),
+        new TypeShape("IdF.Mu", false, -1),
+        new TypeShape("Kind1.Mu", true, -1),
+        new TypeShape("Kind2.Mu", true, -1),
+        new TypeShape("Lens.Mu", false, -1, -1, 0, 1),
+        new TypeShape("Lens.Mu2", false, 0, 1, -1, -1),
+        new TypeShape("ListBox.Instance.Mu", false),
+        new TypeShape("ListBox.Mu", false, -1),
+        new TypeShape("Mapping.Mu", true, -1),
+        new TypeShape("Monoidal.Mu", true, -1),
+        new TypeShape("MonoidProfunctor.Mu", true, -1),
+        new TypeShape("OptionalBox.Instance.Mu", false),
+        new TypeShape("OptionalBox.Mu", false, -1),
+        new TypeShape("Pair.Instance.Mu", false),
+        new TypeShape("Pair.Mu", false, -1, 0),
+        new TypeShape("Prism.Mu", false, -1, -1, 0, 1),
+        new TypeShape("Precompose.Mu", false, 0, 1, -1, -1, -1),
+        new TypeShape("Profunctor.Mu", true, -1),
+        new TypeShape("ProfunctorWrapper.Instance.Mu", false, -1, -1, -1),
+        new TypeShape("ProfunctorWrapper.Mu", false, 0, 1, 2, -1, -1),
+        new TypeShape("ReCartesian.Mu", true, -1),
+        new TypeShape("ReCoCartesian.Mu", true, -1),
+        new TypeShape("RecordCodecBuilder.Mu", false, 0, -1),
+        new TypeShape("ReForgetC.Instance.Mu", false),
+        new TypeShape("ReForgetC.Mu", false, 0, -1, -1),
+        new TypeShape("Representable.Mu", true, -1),
+        new TypeShape("Traversable.Mu", true, -1),
+        new TypeShape("Traversal.Mu", false, -1, -1, 0, 1),
+        new TypeShape("TraversalP.Mu", true, -1),
+        new TypeShape("Type.Mu", false, -1)
+    );
+
+    public static TypeShape getTypeShape(String name) {
+        for (TypeShape shape : muTypeClasses) {
+            if (shape.typeName.equals(name)) {
+                return shape;
+            }
+        }
+        return null;
+    }
 
     /**
      * Return an empty instance of a content object.
@@ -184,29 +270,52 @@ public abstract class LinkFactory {
                 } else {
                     linkInfo.classDoc = type.asClassDoc();
                     link = newContent();
-                    if ("App".equals(linkInfo.classDoc.name())) {
+                    if (appClasses.contains(linkInfo.classDoc.name())) {
+                        // turn App<F<A..>, B..> into F<A..,B..> or F A..,B..
                         Type[] params = linkInfo.type.asParameterizedType().typeArguments();
-                        link.addContent(getTypeParameterLink(linkInfo, params[0], false));
+                        addRawTypeName(linkInfo, link, getTypeParameterLink(linkInfo, params[0], false));
                         link.addContent("<");
-                        link.addContent(getTypeParameterLink(linkInfo, params[1], muBrackets));
-                        link.addContent(">");
-                    } else if ("App2".equals(linkInfo.classDoc.name())) {
-                        Type[] params = linkInfo.type.asParameterizedType().typeArguments();
-                        link.addContent(getTypeParameterLink(linkInfo, params[0], false));
-                        link.addContent("<");
-                        link.addContent(getTypeParameterLink(linkInfo, params[1], muBrackets));
-                        link.addContent(",");
-                        link.addContent(getTypeParameterLink(linkInfo, params[2], muBrackets));
+                        Type[] innerParams;
+                        if (params[0].asParameterizedType() != null) {
+                            innerParams = params[0].asParameterizedType().typeArguments();
+                        } else {
+                            innerParams = new Type[0];
+                        }
+                        TypeShape typeShape = getTypeShape(params[0].typeName());
+                        if (typeShape != null && typeShape.typeArgs.length != 0) {
+                            int outerParamIdx = 1;
+                            for (int i = 0; i < typeShape.typeArgs.length; i++) {
+                                int typeParamIdx = typeShape.typeArgs[i];
+                                if (i > 0) {
+                                    link.addContent(",");
+                                }
+                                if (typeParamIdx < 0) {
+                                    link.addContent(getTypeParameterLink(linkInfo, params[outerParamIdx++], muBrackets));
+                                } else {
+                                    link.addContent(getTypeParameterLink(linkInfo, innerParams[typeParamIdx], muBrackets));
+                                }
+                            }
+                        } else {
+                            for (int i = 1; i < params.length; i++) {
+                                if (i > 1) {
+                                    link.addContent(",");
+                                }
+                                link.addContent(getTypeParameterLink(linkInfo, params[i], muBrackets));
+                            }
+                        }
                         link.addContent(">");
                     } else if (typeClasses.contains(linkInfo.classDoc.name())) {
+                        // turn T<A, ...> into T A
                         Type[] params = linkInfo.type.asParameterizedType().typeArguments();
                         boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
                         linkInfo.excludeTypeParameterLinks = true;
                         link.addContent(getClassLink(linkInfo, muBrackets));
-                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        linkInfo.excludeTypeParameterLinks = false;
                         link.addContent(" ");
-                        link.addContent(getTypeParameterLink(linkInfo, params[0], false));
+                        link.addContent(getTypeParameterLink(linkInfo, params[0], true));
+                        linkInfo.excludeTypeParameterLinks = excludeTypes;
                     } else if (functionClasses.contains(linkInfo.classDoc.name())) {
+                        // turn F<A.., R> into (A..) -> R
                         Type[] params = linkInfo.type.asParameterizedType().typeArguments();
                         link.addContent("(");
                         for (int i = 0; i < params.length - 1; i++) {
@@ -216,13 +325,11 @@ public abstract class LinkFactory {
                             link.addContent(getTypeParameterLink(linkInfo, params[i], muBrackets));
                         }
                         link.addContent(") ");
-                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
-                        linkInfo.excludeTypeParameterLinks = true;
-                        link.addContent(getClassLink(linkInfo, false));
-                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        addRawTypeName(linkInfo, link, getClassLink(linkInfo, false));
                         link.addContent(" ");
                         link.addContent(getTypeParameterLink(linkInfo, params[params.length - 1], muBrackets));
                     } else if (consumerClasses.contains(linkInfo.classDoc.name())) {
+                        // turn F<A..> into (A..) -> void
                         Type[] params = linkInfo.type.asParameterizedType().typeArguments();
                         link.addContent("(");
                         for (int i = 0; i < params.length; i++) {
@@ -232,18 +339,13 @@ public abstract class LinkFactory {
                             link.addContent(getTypeParameterLink(linkInfo, params[i], muBrackets));
                         }
                         link.addContent(") ");
-                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
-                        linkInfo.excludeTypeParameterLinks = true;
-                        link.addContent(getClassLink(linkInfo, false));
-                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        addRawTypeName(linkInfo, link, getClassLink(linkInfo, false));
                         link.addContent(" void");
                     } else if (productClasses.contains(linkInfo.classDoc.name())) {
+                        // turn P<F, T..> into F×(T..)
                         Type[] params = linkInfo.type.asParameterizedType().typeArguments();
                         link.addContent(getTypeParameterLink(linkInfo, params[0], false));
-                        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
-                        linkInfo.excludeTypeParameterLinks = true;
-                        link.addContent(getClassLink(linkInfo, false));
-                        linkInfo.excludeTypeParameterLinks = excludeTypes;
+                        addRawTypeName(linkInfo, link, getClassLink(linkInfo, false));
                         link.addContent("(");
                         for (int i = 1; i < params.length; i++) {
                             if (i > 1) {
@@ -253,9 +355,45 @@ public abstract class LinkFactory {
                         }
                         link.addContent(")");
                     } else {
-                        link.addContent(getClassLink(linkInfo, muBrackets));
-                        if (linkInfo.includeTypeAsSepLink) {
-                            link.addContent(getTypeParameterLinks(linkInfo, false, muBrackets));
+                        // turn e.g. Outer<A, B>.Mu<B> into Outer<_, B>
+                        TypeShape muShape = getTypeShape(linkInfo.classDoc.name());
+                        // display Outer.Instance<A>.Mu<A> as Outer.Instance.Mu
+                        if (muShape != null && muShape.typeArgs.length != 0) {
+                            // handle mu class
+                            // display Outer<A, B>.Mu<A> as Outer<A, _>
+                            Type[] params;
+                            if (linkInfo.type.asParameterizedType() != null) {
+                                params = linkInfo.type.asParameterizedType().typeArguments();
+                            } else {
+                                params = new Type[0];
+                            }
+                            addRawTypeName(linkInfo, link, getClassLink(linkInfo, false));
+                            if (muBrackets) {
+                                if (!muShape.typeClassRendering) {
+                                    link.addContent("<");
+                                } else {
+                                    link.addContent(" ");
+                                }
+                                for (int i = 0; i < muShape.typeArgs.length; i++) {
+                                    int typeArgIdx = muShape.typeArgs[i];
+                                    if (i > 0) {
+                                        link.addContent(",");
+                                    }
+                                    if (typeArgIdx < 0) {
+                                        link.addContent("_");
+                                    } else {
+                                        link.addContent(getTypeParameterLink(linkInfo, params[typeArgIdx], muBrackets));
+                                    }
+                                }
+                                if (!muShape.typeClassRendering) {
+                                    link.addContent(">");
+                                }
+                            }
+                        } else {
+                            link.addContent(getClassLink(linkInfo, muBrackets));
+                            if (linkInfo.includeTypeAsSepLink) {
+                                link.addContent(getTypeParameterLinks(linkInfo, false, muBrackets));
+                            }
                         }
                     }
                 }
@@ -299,6 +437,13 @@ public abstract class LinkFactory {
         } else {
             return null;
         }
+    }
+
+    private void addRawTypeName(LinkInfo linkInfo, Content link, Content typeParameterLink) {
+        boolean excludeTypes = linkInfo.excludeTypeParameterLinks;
+        linkInfo.excludeTypeParameterLinks = true;
+        link.addContent(typeParameterLink);
+        linkInfo.excludeTypeParameterLinks = excludeTypes;
     }
 
     private void setBoundsLinkInfo(LinkInfo linkInfo, Type bound) {

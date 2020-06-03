@@ -146,12 +146,9 @@ public abstract class LinkInfo {
             return label;
         } else if (isLinkable()) {
             Content label = newContent();
-            if (classDoc.name().endsWith(".Mu")) {
-                String name = classDoc.name().substring(0, classDoc.name().length() - 3);
-                if (muBrackets) {
-                    name = "(" + name + ")";
-                }
-                label.addContent(name);
+            LinkFactory.TypeShape typeShape = LinkFactory.getTypeShape(classDoc.name());
+            if (!muBrackets && typeShape != null) {
+                label.addContent(classDoc.name().substring(0, classDoc.name().lastIndexOf(".")));
             } else if (!muBrackets && (LinkFactory.functionClasses.contains(classDoc.name()) || LinkFactory.consumerClasses.contains(classDoc.name()))) {
                 // ^ don't show an arrow in the package view
                 label.addContent("->");
