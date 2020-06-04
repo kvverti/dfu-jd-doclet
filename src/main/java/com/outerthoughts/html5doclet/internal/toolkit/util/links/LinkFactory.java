@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import com.outerthoughts.html5doclet.formats.html.LinkInfoImpl;
 import com.outerthoughts.html5doclet.internal.toolkit.Content;
 import com.sun.javadoc.AnnotationDesc;
 import com.sun.javadoc.ClassDoc;
@@ -220,19 +221,19 @@ public abstract class LinkFactory {
                 } else {
                     linkInfo.classDoc = type.asClassDoc();
                     link = newContent();
-                    Tag[] dfuRendering = linkInfo.classDoc.tags("dfu.shape");
-                    if (dfuRendering.length != 0) {
+                    String dfuShapeTemplate = getShapeTemplate(linkInfo);
+                    if (dfuShapeTemplate != null) {
                         // special case for @dfu.render applied
-                        if (dfuRendering[0].text().equals("applied")) {
+                        if (dfuShapeTemplate.equals("applied")) {
                             // turn App<F<A..>, B..> into F<A..,B..> or F A..,B..
                             Type[] params = linkInfo.type.asParameterizedType().typeArguments();
                             boolean customShape = false;
                             if (params[0].asTypeVariable() == null && params[0].asClassDoc() != null) {
-                                Tag[] innerRendering = params[0].asClassDoc().tags("dfu.shape");
-                                if (innerRendering.length != 0) {
-                                    LinkInfo innerInfo = makeLink(linkInfo, params[0]);
-                                    innerInfo.classDoc = params[0].asClassDoc();
-                                    addCustomShapedType(innerInfo, link, innerRendering[0], params);
+                                LinkInfo innerInfo = makeLink(linkInfo, params[0]);
+                                innerInfo.classDoc = params[0].asClassDoc();
+                                String innerTemplate = getShapeTemplate(innerInfo);
+                                if (innerTemplate != null) {
+                                    addCustomShapedType(innerInfo, link, innerTemplate, params);
                                     customShape = true;
                                 }
                             }
@@ -248,7 +249,7 @@ public abstract class LinkFactory {
                                 link.addContent(">");
                             }
                         } else {
-                            addCustomShapedType(linkInfo, link, dfuRendering[0], new Type[0]);
+                            addCustomShapedType(linkInfo, link, dfuShapeTemplate, new Type[0]);
                         }
                     } else {
                         link.addContent(getClassLink(linkInfo, "Type"));
@@ -299,11 +300,27 @@ public abstract class LinkFactory {
         }
     }
 
-    private void addCustomShapedType(LinkInfo linkInfo, Content link, Tag tag, Type[] outerParams) {
+    private String getShapeTemplate(LinkInfo linkInfo) {
+        String dfuShapeTemplate;
+        String overrideTemplate = ((LinkInfoImpl) linkInfo).configuration.templateStringsByClass.get(linkInfo.classDoc.qualifiedName());
+        if (overrideTemplate != null) {
+            dfuShapeTemplate = overrideTemplate;
+        } else {
+            Tag[] dfuRendering = linkInfo.classDoc.tags("dfu.shape");
+            if (dfuRendering.length != 0) {
+                dfuShapeTemplate = dfuRendering[0].text();
+            } else {
+                dfuShapeTemplate = null;
+            }
+        }
+        return dfuShapeTemplate;
+    }
+
+    private void addCustomShapedType(LinkInfo linkInfo, Content link, String template, Type[] outerParams) {
         // all other type shapes
         // e.g. DataResult<_>, Const<C,_>, Functor F, (T) -> R
         // special support for the names "Mu" and "Type"
-        List<TypeShapeToken> tokens = TypeShapeToken.of(tag.text());
+        List<TypeShapeToken> tokens = TypeShapeToken.of(template);
         Type[] params;
         if (linkInfo.type.asParameterizedType() != null) {
             params = linkInfo.type.asParameterizedType().typeArguments();

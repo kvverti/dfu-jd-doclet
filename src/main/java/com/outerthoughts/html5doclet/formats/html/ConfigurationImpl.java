@@ -175,6 +175,11 @@ public class ConfigurationImpl extends Configuration {
     public boolean createoverview = false;
 
     /**
+     * Map of type name -> template string passed in "-shape" options.
+     */
+    public final Map<String, String> templateStringsByClass = new HashMap<>();
+
+    /**
      * Collected set of doclint options
      */
     public Set<String> doclintOpts = new LinkedHashSet<String>();
@@ -282,6 +287,8 @@ public class ConfigurationImpl extends Configuration {
                 doclintOpts.add(null);
             } else if (opt.startsWith("-xdoclint:")) {
                 doclintOpts.add(opt.substring(opt.indexOf(":") + 1));
+            } else if (opt.startsWith("-shape")) {
+                templateStringsByClass.put(os[1], os[2]);
             }
         }
         if (root.specifiedClasses().length > 0) {
@@ -365,6 +372,9 @@ public class ConfigurationImpl extends Configuration {
                    option.equals("-overview") ||
                    option.equals("-xdocrootparent")) {
             return 2;
+        } else if (option.equals("-shape")) {
+            // -shape com.foo.bar.ClassName "template"
+            return 3;
         } else {
             return 0;
         }
