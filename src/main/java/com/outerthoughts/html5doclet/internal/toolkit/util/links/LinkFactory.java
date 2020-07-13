@@ -25,6 +25,8 @@
 
 package com.outerthoughts.html5doclet.internal.toolkit.util.links;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +49,7 @@ import com.sun.javadoc.WildcardType;
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  *
- * @author Jamie Ho
+ * @author Jamie Ho, Thalia Nero
  * @since 1.5
  */
 public abstract class LinkFactory {
@@ -106,22 +108,34 @@ public abstract class LinkFactory {
                             tokens.add(new TypeShapeToken(Kind.CLASS_LINK, template.substring(bgn, end)));
                             end++;
                         }
-                    } else {
-                        // type placeholder begins with '^'
-                        boolean placeholder = template.charAt(end) == '^';
-                        if (placeholder) {
-                            // increment to first numeric char
-                            end++;
-                        }
-                        String digits = "0123456789";
-                        // get three digits max (maximum number of type params is 255)
+                    } else if (template.charAt(end) == '^') {
+                        // type placeholder
+                        // increment to first numeric char
+                        end++;
                         bgn = end;
-                        while (end < len && digits.indexOf(template.charAt(end)) >= 0 && (end - bgn) < 3) {
-                            end++;
-                        }
+                        end = parseTypeArgumentIndex(template, bgn);
                         if (bgn != end) {
                             // ^123 -> 123
-                            tokens.add(new TypeShapeToken(placeholder ? Kind.TYPE_PLACEHOLDER : Kind.TYPE_ARGUMENT, template.substring(bgn, end)));
+                            tokens.add(new TypeShapeToken(Kind.TYPE_PLACEHOLDER, template.substring(bgn, end)));
+                        }
+                    } else if (template.charAt(end) == 'a') {
+                        // type argument application. Applies an argument to another argument (no placeholders).
+                        end++;
+                        bgn = end;
+                        do {
+                            end++;
+                        } while (end < len && template.charAt(end) != ';');
+                        if (bgn != end) {
+                            tokens.add(new TypeShapeToken(Kind.TYPE_ARGUMENT_APPLICATION, template.substring(bgn, end)));
+                            end++;
+                        }
+                    } else {
+                        // type argument
+                        bgn = end;
+                        end = parseTypeArgumentIndex(template, bgn);
+                        if (bgn != end) {
+                            // a123,213; -> 123,213
+                            tokens.add(new TypeShapeToken(Kind.TYPE_ARGUMENT, template.substring(bgn, end)));
                         }
                     }
                     bgn = end;
@@ -138,10 +152,22 @@ public abstract class LinkFactory {
             return tokens;
         }
 
+        private static int parseTypeArgumentIndex(String template, int bgn) {
+            String digits = "0123456789";
+            // get three digits max (maximum number of type params is 255)
+            int end = bgn;
+            int len = template.length();
+            while (end < len && digits.indexOf(template.charAt(end)) >= 0 && (end - bgn) < 3) {
+                end++;
+            }
+            return end;
+        }
+
         enum Kind {
             CLASS_LINK,
             TYPE_ARGUMENT,
             TYPE_PLACEHOLDER,
+            TYPE_ARGUMENT_APPLICATION,
             LITERAL
         }
     }
@@ -225,29 +251,8 @@ public abstract class LinkFactory {
                     if (dfuShapeTemplate != null) {
                         // special case for @dfu.render applied
                         if (dfuShapeTemplate.equals("applied")) {
-                            // turn App<F<A..>, B..> into F<A..,B..> or F A..,B..
                             Type[] params = linkInfo.type.asParameterizedType().typeArguments();
-                            boolean customShape = false;
-                            if (params[0].asTypeVariable() == null && params[0].asClassDoc() != null) {
-                                LinkInfo innerInfo = makeLink(linkInfo, params[0]);
-                                innerInfo.classDoc = params[0].asClassDoc();
-                                String innerTemplate = getShapeTemplate(innerInfo);
-                                if (innerTemplate != null) {
-                                    addCustomShapedType(innerInfo, link, innerTemplate, params);
-                                    customShape = true;
-                                }
-                            }
-                            if (!customShape) {
-                                link.addContent(getTypeParameterLink(linkInfo, params[0]));
-                                link.addContent("<");
-                                for (int i = 1; i < params.length; i++) {
-                                    if (i > 1) {
-                                        link.addContent(",");
-                                    }
-                                    link.addContent(getTypeParameterLink(linkInfo, params[i]));
-                                }
-                                link.addContent(">");
-                            }
+                            addAppliedType(linkInfo, link, params);
                         } else {
                             addCustomShapedType(linkInfo, link, dfuShapeTemplate, new Type[0]);
                         }
@@ -300,6 +305,31 @@ public abstract class LinkFactory {
         }
     }
 
+    private void addAppliedType(LinkInfo linkInfo, Content link, Type[] params) {
+        // turn App<F<A..>, B..> into F<A..,B..> or F A..,B..
+        boolean customShape = false;
+        if (params[0].asTypeVariable() == null && params[0].asClassDoc() != null) {
+            LinkInfo innerInfo = makeLink(linkInfo, params[0]);
+            innerInfo.classDoc = params[0].asClassDoc();
+            String innerTemplate = getShapeTemplate(innerInfo);
+            if (innerTemplate != null) {
+                addCustomShapedType(innerInfo, link, innerTemplate, params);
+                customShape = true;
+            }
+        }
+        if (!customShape) {
+            link.addContent(getTypeParameterLink(linkInfo, params[0]));
+            link.addContent("<");
+            for (int i = 1; i < params.length; i++) {
+                if (i > 1) {
+                    link.addContent(",");
+                }
+                link.addContent(getTypeParameterLink(linkInfo, params[i]));
+            }
+            link.addContent(">");
+        }
+    }
+
     private String getShapeTemplate(LinkInfo linkInfo) {
         String dfuShapeTemplate;
         String overrideTemplate = ((LinkInfoImpl) linkInfo).configuration.templateStringsByClass.get(linkInfo.classDoc.qualifiedName());
@@ -314,6 +344,20 @@ public abstract class LinkFactory {
             }
         }
         return dfuShapeTemplate;
+    }
+
+    private static final Constructor<Type> PRIMITIVE_TYPE_CONSTRUCTOR;
+
+    static {
+        try {
+            @SuppressWarnings("unchecked")
+            Constructor<Type> ctor = (Constructor<Type>) Class.forName("com.sun.tools.javadoc.PrimitiveType")
+                .getDeclaredConstructor(String.class);
+            ctor.setAccessible(true);
+            PRIMITIVE_TYPE_CONSTRUCTOR = ctor;
+        } catch (NoSuchMethodException | ClassNotFoundException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     private void addCustomShapedType(LinkInfo linkInfo, Content link, String template, Type[] outerParams) {
@@ -355,6 +399,35 @@ public abstract class LinkFactory {
                     link.addContent(token.value);
                 }
                 break;
+            case TYPE_ARGUMENT_APPLICATION:
+                String[] indices = token.value.split(",");
+                if (indices.length < 2) {
+                    link.addContent(token.value);
+                } else {
+                    try {
+                        Type[] innerParams = new Type[indices.length];
+                        int typeCtorIdx = Integer.parseInt(indices[0]);
+                        innerParams[0] = params[typeCtorIdx];
+                        for (int i = 1; i < innerParams.length; i++) {
+                            try {
+                                String t = indices[i];
+                                if (!t.isEmpty() && t.charAt(0) == '^') {
+                                    t = t.substring(1);
+                                    int idx = Integer.parseInt(t);
+                                    innerParams[i] = outerParams[idx];
+                                } else {
+                                    int idx = Integer.parseInt(t);
+                                    innerParams[i] = params[idx];
+                                }
+                            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                                innerParams[i] = PRIMITIVE_TYPE_CONSTRUCTOR.newInstance(indices[i]);
+                            }
+                        }
+                        addAppliedType(linkInfo, link, innerParams);
+                    } catch (NumberFormatException | IndexOutOfBoundsException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                        link.addContent(token.value);
+                    }
+                }
             }
         }
     }
