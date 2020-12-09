@@ -125,6 +125,18 @@ abstract class TypeShapeToken {
                     end++;
                 }
             }
+        } else if (template.charAt(end) == '\'') {
+            // quoted literal
+            end++;
+            bgn = end;
+            while(end < len && template.charAt(end) != '\'') {
+                end++;
+            }
+            if(bgn != end) {
+                tokens.add(new LiteralToken(template.substring(bgn, end)));
+            }
+            // skip closing quote
+            end++;
         } else {
             // type argument
             bgn = end;
