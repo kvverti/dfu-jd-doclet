@@ -101,7 +101,7 @@ abstract class TypeShapeToken {
                 // ^123 -> 123
                 tokens.add(new TypePlaceholderToken(Integer.parseInt(template.substring(bgn, end))));
             }
-        } else if (template.charAt(end) == 'a') {
+        } else if (template.charAt(end) == '(') {
             // type argument application. Applies an argument to another argument (no placeholders).
             end++;
             bgn = end;
@@ -118,7 +118,7 @@ abstract class TypeShapeToken {
                     if (end < len) {
                         end = parseNextToken(template, subTokens, len, end);
                     }
-                } while (end < len && template.charAt(end) != ';');
+                } while (end < len && template.charAt(end) != ')');
                 if (bgn != end) {
                     // a123,213; -> 123,213
                     tokens.add(new TypeArgumentApplicationToken(subTokens));
