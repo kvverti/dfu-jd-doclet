@@ -21,6 +21,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
+ * Modified 2020, Thalia Nero to add custom type shape support.
  */
 
 package com.outerthoughts.html5doclet.internal.toolkit.util.links;
