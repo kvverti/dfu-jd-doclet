@@ -44,7 +44,7 @@ import com.outerthoughts.html5doclet.internal.toolkit.util.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @author Jamie Ho
+ * @author Jamie Ho, Thalia Nero
  * @since 1.4
  */
 
@@ -656,6 +656,8 @@ public class TagletManager {
         customTags.put((temp = new SimpleTaglet("factory", message.getText("doclet.Factory"),
             SimpleTaglet.METHOD)).getName(), temp);
         addStandardTaglet(new SeeTaglet());
+        // DFU type shape
+        addStandardTaglet(new SimpleTaglet("dfu.shape", "", SimpleTaglet.TYPE));
         //Standard inline tags
         addStandardTaglet(new DocRootTaglet());
         addStandardTaglet(new InheritDocTaglet());
