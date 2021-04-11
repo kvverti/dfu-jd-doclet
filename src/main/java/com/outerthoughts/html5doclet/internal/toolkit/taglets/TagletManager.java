@@ -658,6 +658,7 @@ public class TagletManager {
         addStandardTaglet(new SeeTaglet());
         // DFU type shape
         addStandardTaglet(new SimpleTaglet("dfu.shape", message.getText("doclet.DfuShape"), SimpleTaglet.TYPE));
+        addStandardTaglet(new SimpleTaglet("dfu.hidden", message.getText("doclet.DfuHidden"), SimpleTaglet.EXCLUDED));
         //Standard inline tags
         addStandardTaglet(new DocRootTaglet());
         addStandardTaglet(new InheritDocTaglet());
