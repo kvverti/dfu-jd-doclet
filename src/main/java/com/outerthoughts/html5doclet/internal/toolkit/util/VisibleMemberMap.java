@@ -315,7 +315,7 @@ public class VisibleMemberMap {
             return members;
         }
 
-        private ClassMembers(ClassDoc mappingClass, String level) {
+        private     ClassMembers(ClassDoc mappingClass, String level) {
             this.mappingClass = mappingClass;
             this.level = level;
             if (classMap.containsKey(mappingClass) &&
@@ -376,7 +376,8 @@ public class VisibleMemberMap {
                 if (!found(members, pgmelem) &&
                     memberIsVisible(pgmelem) &&
                     !isOverridden(pgmelem, level) &&
-                    !isTreatedAsPrivate(pgmelem)) {
+                    !isTreatedAsPrivate(pgmelem)
+                    && pgmelem.tags("dfu.hidden").length == 0) {
                         incllist.add(pgmelem);
                 }
             }

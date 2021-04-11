@@ -277,7 +277,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             for (int i = 0; i < implIntfacs.length; i++) {
                 ClassDoc classDoc = implIntfacs[i].asClassDoc();
                 if (! (classDoc.isPublic() ||
-                        Util.isLinkable(classDoc, configuration))) {
+                        Util.isLinkable(classDoc, configuration)) ||
+                    classDoc.tags("dfu.hidden").length != 0) {
                     continue;
                 }
                 if (counter == 0) {

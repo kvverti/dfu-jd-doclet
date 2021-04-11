@@ -527,7 +527,8 @@ public class Util {
         ClassDoc supClassDoc = classDoc.superclass();
         while (sup != null &&
                   (! (supClassDoc.isPublic() ||
-                              isLinkable(supClassDoc, configuration))) ) {
+                              isLinkable(supClassDoc, configuration)) ||
+                      supClassDoc.tags("dfu.hidden").length != 0) ) {
             if (supClassDoc.superclass().qualifiedName().equals(supClassDoc.qualifiedName()))
                 break;
             sup = supClassDoc.superclassType();
