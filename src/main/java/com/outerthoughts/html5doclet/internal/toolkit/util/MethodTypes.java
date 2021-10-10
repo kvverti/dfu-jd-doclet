@@ -21,6 +21,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
+ * Modified 2021 Thalia Nero: add hidden method type
  */
 
 package com.outerthoughts.html5doclet.internal.toolkit.util;
@@ -37,7 +39,8 @@ public enum MethodTypes {
     ABSTRACT(0x4, "Abstract Methods", "t3", false),
     CONCRETE(0x8, "Concrete Methods", "t4", false),
     DEFAULT(0x10, "Default Methods", "t5", false),
-    DEPRECATED(0x20, "Deprecated Methods", "t6", false);
+    DEPRECATED(0x20, "Deprecated Methods", "t6", false),
+    HIDDEN(0x1_0000, "Hidden Methods", "t7", false);
 
     private final int value;
     private final String text;

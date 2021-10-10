@@ -21,6 +21,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
+ * Modified 2021 Thalia Nero: add hidden method type
  */
 
 package com.outerthoughts.html5doclet.formats.html;
@@ -192,6 +194,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 "  else {" + DocletConstants.NL +
                 "    allClassesLink.style.display = \"none\";" + DocletConstants.NL +
                 "  }" + DocletConstants.NL +
+                "  show(" + MethodTypes.ALL.value() + ");" + DocletConstants.NL +
                 "  //-->" + DocletConstants.NL;
         Content scriptContent = new RawHtml(scriptCode);
         script.addContent(scriptContent);

@@ -21,11 +21,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
+ * Modified 2021 by Thalia Nero: add hidden method default tab
  */
 
 package com.outerthoughts.html5doclet.formats.html;
 
 import java.io.*;
+import java.util.Collections;
 
 import com.sun.javadoc.*;
 import com.outerthoughts.html5doclet.formats.html.markup.*;
@@ -225,6 +228,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     public Content getCaption() {
+        if (this.methodTypes.equals(Collections.singleton(MethodTypes.HIDDEN))) {
+            return configuration.getResource("doclet.MethodsHidden");
+        }
         return configuration.getResource("doclet.Methods");
     }
 

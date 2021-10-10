@@ -21,6 +21,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
+ * Modified 2021 Thalia Nero: add hidden method type
  */
 
 package com.outerthoughts.html5doclet.internal.toolkit.util;
@@ -377,7 +379,7 @@ public class VisibleMemberMap {
                     memberIsVisible(pgmelem) &&
                     !isOverridden(pgmelem, level) &&
                     !isTreatedAsPrivate(pgmelem)
-                    && pgmelem.tags("dfu.hidden").length == 0) {
+                    && (pgmelem.isMethod() || pgmelem.tags("dfu.hidden").length == 0)) {
                         incllist.add(pgmelem);
                 }
             }

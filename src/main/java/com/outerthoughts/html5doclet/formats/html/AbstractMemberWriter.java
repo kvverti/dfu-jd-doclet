@@ -21,6 +21,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
+ * Modified 2021 Thalia Nero: add hidden method type
  */
 
 package com.outerthoughts.html5doclet.formats.html;
@@ -572,6 +574,10 @@ public abstract class AbstractMemberWriter {
                 methodType = (((MethodDoc) member).isAbstract())
                         ? methodType | MethodTypes.ABSTRACT.value()
                         : methodType | MethodTypes.CONCRETE.value();
+            }
+            if (member.tags("dfu.hidden").length != 0) {
+                // override so it doesn't show up in any other tab
+                methodType = MethodTypes.HIDDEN.value();
             }
             if (Util.isDeprecated(member) || Util.isDeprecated(classdoc)) {
                 methodType = methodType | MethodTypes.DEPRECATED.value();
